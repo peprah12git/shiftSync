@@ -5,7 +5,6 @@ import lombok.*;
 import org.example.shiftsync.enums.EmploymentType;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
@@ -16,13 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "employees")
+@Table(
+        name = "employees",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_employees_email", columnNames = "email")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Employee {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,7 +36,8 @@ public class Employee {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(length = 30)
+
+    @Column(name = "phone", length = 30)
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -58,9 +64,12 @@ public class Employee {
     private boolean isActive = true;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb", nullable = false)
+    @Column(name = "skills", columnDefinition = "jsonb", nullable = false)
     @Builder.Default
     private List<String> skills = new ArrayList<>();
+
+//    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
+//    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

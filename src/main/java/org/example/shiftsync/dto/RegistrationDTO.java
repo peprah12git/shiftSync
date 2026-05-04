@@ -2,15 +2,17 @@ package org.example.shiftsync.dto;
 
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.example.shiftsync.enums.Role;
 
 @Getter
 @AllArgsConstructor
 public class RegistrationDTO {
-    private String firstName;
+    private String fullName;
     @NotBlank(message = "email required")
     @Pattern(
             regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
@@ -22,4 +24,7 @@ public class RegistrationDTO {
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
     message =" Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")
     private String passwordHash;
+
+    @NotNull(message = "Role is required")
+    private Role role;
 }

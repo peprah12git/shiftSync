@@ -33,6 +33,11 @@ public class User {
     @Column(nullable = false, length = 30)
     private Role role;
 
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "employee_id", unique = true)
+//    private Employee employee;
+
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean isActive = true;
