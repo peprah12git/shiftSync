@@ -15,7 +15,7 @@ public class UserMapper {
             user.setEmail(registrationDTO.getEmail());
             user.setFullName(registrationDTO.getFullName());
             user.setPasswordHash(registrationDTO.getPassword());
-            user.setRole(registrationDTO.getRole());
+            //user.setRole(registrationDTO.getRole());
             return user;
 
     }
@@ -25,7 +25,7 @@ public class UserMapper {
         response.setId(user.getId());
         response.setEmail(user.getEmail());
         response.setFullName(user.getFullName());
-        response.setRole(user.getRole());
+       // response.setRole(user.getRole());
         return response;
     }
 }
