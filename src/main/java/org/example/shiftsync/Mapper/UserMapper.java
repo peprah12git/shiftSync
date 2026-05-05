@@ -1,6 +1,6 @@
 package org.example.shiftsync.Mapper;
 
-import lombok.Builder;
+
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.dto.RegistrationDTO;
 import org.example.shiftsync.dto.UserResponse;
@@ -14,7 +14,7 @@ public class UserMapper {
             User user = new User();
             user.setEmail(registrationDTO.getEmail());
             user.setFullName(registrationDTO.getFullName());
-            user.setPasswordHash(registrationDTO.getPasswordHash());
+            user.setPasswordHash(registrationDTO.getPassword());
             user.setRole(registrationDTO.getRole());
             return user;
 

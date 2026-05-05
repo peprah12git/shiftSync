@@ -12,6 +12,7 @@ import org.example.shiftsync.enums.Role;
 @Getter
 @AllArgsConstructor
 public class RegistrationDTO {
+    @Size(min = 3, max = 50)
     private String fullName;
     @NotBlank(message = "email required")
     @Pattern(
@@ -23,7 +24,7 @@ public class RegistrationDTO {
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
     message =" Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")
-    private String passwordHash;
+    private String password;
 
     @NotNull(message = "Role is required")
     private Role role;
