@@ -10,9 +10,10 @@ import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.exception.DuplicateEmailException;
 import org.example.shiftsync.repository.UserRepository;
 import org.example.shiftsync.security.JwtTokenService;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,21 @@ public class AuthServiceImpl {
                 saved.getRole()
         );
 
+    }
+
+    public LoginResponseDTO refreshToken(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid Authorization header");
+        }
+        String token = authorizationHeader.substring(7);
+        if (!jwtTokenService.isTokenValid(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token is expired or invalid");
+        }
+        String email = jwtTokenService.extractEmail(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        String newToken = jwtTokenService.generateToken(user);
+        return new LoginResponseDTO(user.getFullName(), user.getEmail(), newToken, user.getRole());
     }
 
     public LoginResponseDTO login(LoginDTO loginDTO) {

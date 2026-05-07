@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,12 +15,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class DataSeeder {
 
     private final PasswordEncoder passwordEncoder;
+    @Value("${admin_email}")
+    private String adminEmail;
 
+    @Value("${admin_password}")
+    private String adminPassword;
     @Bean
     CommandLineRunner seedAdmin(UserRepository userRepository) {
         return args -> {
 
-            String adminEmail = "admin@shiftsync.com";
 
             boolean adminExists = userRepository.findByEmail(adminEmail).isPresent();
 
@@ -28,7 +32,7 @@ public class DataSeeder {
                 User admin = User.builder()
                         .fullName("HR_ADMIN")
                         .email(adminEmail)
-                        .passwordHash(passwordEncoder.encode("Admin@123"))
+                        .passwordHash(passwordEncoder.encode(adminPassword))
                         .role(Role.HR_ADMIN)
                         .isActive(true)
                         .build();

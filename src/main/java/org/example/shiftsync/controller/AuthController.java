@@ -33,4 +33,10 @@ public class AuthController {
         return new ResponseEntity<>(loginResponseDTO, HttpStatus.OK);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDTO> refresh(@RequestHeader("Authorization") String authorizationHeader) {
+        LoginResponseDTO response = authService.refreshToken(authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
 }
