@@ -2,10 +2,7 @@ package org.example.shiftsync.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.shiftsync.dto.LoginDTO;
-import org.example.shiftsync.dto.LoginResponseDTO;
-import org.example.shiftsync.dto.RegistrationDTO;
-import org.example.shiftsync.dto.UserResponse;
+import org.example.shiftsync.dto.*;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.service.AuthServiceImpl;
 import org.example.shiftsync.service.UserService;
@@ -34,8 +31,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponseDTO> refresh(@RequestHeader("Authorization") String authorizationHeader) {
-        LoginResponseDTO response = authService.refreshToken(authorizationHeader);
+    public ResponseEntity<RefreshTokenResponseDTO> refresh(@RequestHeader("Authorization") String authorizationHeader) {
+        RefreshTokenResponseDTO response = authService.refreshToken(authorizationHeader);
         return ResponseEntity.ok(response);
     }
 

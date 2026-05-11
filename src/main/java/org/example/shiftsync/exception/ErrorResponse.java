@@ -1,8 +1,12 @@
 package org.example.shiftsync.exception;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDateTime;
+
 
 public record ErrorResponse(
         int status,

@@ -10,11 +10,8 @@ import org.example.shiftsync.enums.Role;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginResponseDTO {
-    private Long Id;
-    private String FullName;
-    private String Email;
+public class RefreshTokenResponseDTO {
+    private String email;
     private String token;
     private Role role;
-
 }
