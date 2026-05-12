@@ -6,8 +6,11 @@ import org.example.shiftsync.Entity.Employee;
 import org.example.shiftsync.Entity.Location;
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.Mapper.EmployeeMapper;
+import org.example.shiftsync.dto.EmployeeFilterDTO;
 import org.example.shiftsync.dto.EmployeeRequestDTO;
 import org.example.shiftsync.dto.EmployeeResponseDTO;
+import org.example.shiftsync.specification.EmployeeSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import org.example.shiftsync.exception.DuplicateEmailException;
 import org.example.shiftsync.exception.ResourceNotFoundException;
 import org.example.shiftsync.repository.DepartmentRepository;
@@ -15,10 +18,10 @@ import org.example.shiftsync.repository.EmployeeRepository;
 import org.example.shiftsync.repository.LocationRepository;
 import org.example.shiftsync.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.awt.print.Pageable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -87,11 +90,19 @@ public class EmployeeService {
     }
 
     /**
-     * List all employees.
+     * Filterable, paginated list of employees.
      */
     @Transactional(readOnly = true)
-    public Page<EmployeeResponseDTO> getAllEmployees(Pageable pageable) {
-        return employeeRepository.findAll(pageable)
-                .map(employeeMapper::toDTO);  // Page has its own .map(), use that
+    public Page<EmployeeResponseDTO> getAllEmployees(EmployeeFilterDTO filter, Pageable pageable) {
+        Specification<Employee> spec = Specification.allOf(
+                EmployeeSpecification.hasFullName(filter.getName()),
+                EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
+                EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
+                EmployeeSpecification.hasLocation(filter.getLocationId()),
+                EmployeeSpecification.isActive(filter.getActive())
+        );
+
+        return employeeRepository.findAll(spec, pageable)
+                .map(employeeMapper::toDTO);
     }
 }
