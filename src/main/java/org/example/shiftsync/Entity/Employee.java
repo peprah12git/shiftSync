@@ -68,8 +68,6 @@ public class Employee {
     @Builder.Default
     private List<String> skills = new ArrayList<>();
 
-//    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
-//    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
