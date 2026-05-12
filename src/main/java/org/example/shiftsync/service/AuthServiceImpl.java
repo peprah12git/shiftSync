@@ -38,6 +38,7 @@ public class AuthServiceImpl {
         return new UserResponse(saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole());
     }
 
+
     public RefreshTokenResponseDTO refreshToken(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new InvalidTokenException("Missing or invalid Authorization header");
@@ -52,6 +53,7 @@ public class AuthServiceImpl {
         String newToken = jwtTokenService.generateToken(user);
         return new RefreshTokenResponseDTO(user.getEmail(), newToken, user.getRole());
     }
+
 
     public LoginResponseDTO login(LoginDTO loginDTO) {
         User user = userRepository.findByEmail(loginDTO.getEmail())

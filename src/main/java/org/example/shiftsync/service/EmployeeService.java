@@ -46,7 +46,7 @@ public class EmployeeService {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No registered user found with ID: " + dto.getUserId()
-                        + ". The employee must register first via /api/auth/register."));
+                        ));
 
         // 2. Guard: one Employee profile per User
         if (employeeRepository.existsByUserId(dto.getUserId())) {

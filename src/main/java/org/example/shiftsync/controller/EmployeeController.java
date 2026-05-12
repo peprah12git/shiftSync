@@ -47,8 +47,7 @@ public class EmployeeController {
     /**
      * GET /api/employees
      * HR_ADMIN or MANAGER — filterable, paginated list of employees.
-
-//   GET /api/employees?name=john&departmentId=2&employmentType=FULL_TIME&page=0&size=10&sort=hireDate,desc
+     *   GET /api/employees?name=john&departmentId=2&employmentType=FULL_TIME&page=0&size=10&sort=hireDate,desc
      */
     @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
     @GetMapping
