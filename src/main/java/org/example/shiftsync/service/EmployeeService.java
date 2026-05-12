@@ -21,6 +21,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.shiftsync.dto.EmployeeUpdateDTO;
+import org.example.shiftsync.exception.ForbiddenFieldException;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -104,5 +107,53 @@ public class EmployeeService {
 
         return employeeRepository.findAll(spec, pageable)
                 .map(employeeMapper::toDTO);
+    }
+
+    /**
+     * GET /api/employees/me — returns the authenticated employee's own profile.
+     */
+    @Transactional(readOnly = true)
+    public EmployeeResponseDTO getMe() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Employee employee = employeeRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No employee profile found for the authenticated user"));
+        return employeeMapper.toDTO(employee);
+    }
+
+    /**
+     * PATCH /api/employees/me — employee updates only their own phone and skill tags.
+     * Attempting to change employmentType, departmentId, or locationId returns 403.
+     */
+    @Transactional
+    public EmployeeResponseDTO updateMe(EmployeeUpdateDTO dto) {
+        // Guard: reject attempts to update restricted fields
+        if (dto.getEmploymentType() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'employmentType' is not allowed. Contact HR Admin.");
+        }
+        if (dto.getDepartmentId() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'departmentId' is not allowed. Contact HR Admin.");
+        }
+        if (dto.getLocationId() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'locationId' is not allowed. Contact HR Admin.");
+        }
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Employee employee = employeeRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No employee profile found for the authenticated user"));
+
+        if (dto.getPhone() != null) {
+            employee.setPhone(dto.getPhone());
+        }
+        if (dto.getSkillTags() != null) {
+            employee.setSkills(dto.getSkillTags());
+        }
+
+        employee = employeeRepository.save(employee);
+        return employeeMapper.toDTO(employee);
     }
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.dto.EmployeeFilterDTO;
 import org.example.shiftsync.dto.EmployeeRequestDTO;
 import org.example.shiftsync.dto.EmployeeResponseDTO;
+import org.example.shiftsync.dto.EmployeeUpdateDTO;
 import org.example.shiftsync.service.EmployeeService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,26 @@ public class EmployeeController {
             @Valid @RequestBody EmployeeRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(employeeService.createEmployee(request));
+    }
+
+    /**
+     * GET /api/employees/me — any authenticated employee sees their own profile.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/me")
+    public ResponseEntity<EmployeeResponseDTO> getMe() {
+        return ResponseEntity.ok(employeeService.getMe());
+    }
+
+    /**
+     * PATCH /api/employees/me — employee updates their own phone / skill tags only.
+     * Sending employmentType, departmentId, or locationId returns 403.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/me")
+    public ResponseEntity<EmployeeResponseDTO> updateMe(
+            @Valid @RequestBody EmployeeUpdateDTO dto) {
+        return ResponseEntity.ok(employeeService.updateMe(dto));
     }
 
     /**

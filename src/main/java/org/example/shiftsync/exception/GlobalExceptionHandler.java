@@ -53,9 +53,17 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", ex.getMessage()));
     }
 
-    // 403 Forbidden
+    // 403 Forbidden - Spring Security
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of(HttpStatus.FORBIDDEN.value(), "Forbidden", ex.getMessage()));
+    }
+
+    // 403 Forbidden - attempted to update a restricted field
+    @ExceptionHandler(ForbiddenFieldException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenField(ForbiddenFieldException ex) {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse.of(HttpStatus.FORBIDDEN.value(), "Forbidden", ex.getMessage()));
