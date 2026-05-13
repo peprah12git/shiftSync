@@ -17,7 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/employees")
+@RequestMapping("/api/v1/employees")
 @RequiredArgsConstructor
 public class EmployeeController {
 
@@ -28,7 +28,7 @@ public class EmployeeController {
      * HR_ADMIN only — creates an employee profile for an already-registered user.
      */
     @PreAuthorize("hasRole('HR_ADMIN')")
-    @PostMapping
+    @PostMapping("/createEmployee")
     public ResponseEntity<EmployeeResponseDTO> createEmployee(
             @Valid @RequestBody EmployeeRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,10 +71,17 @@ public class EmployeeController {
      *   GET /api/employees?name=john&departmentId=2&employmentType=FULL_TIME&page=0&size=10&sort=hireDate,desc
      */
     @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
-    @GetMapping
+    @GetMapping("/getALlEmployees")
     public ResponseEntity<Page<EmployeeResponseDTO>> getAllEmployees(
             @ModelAttribute EmployeeFilterDTO filter,
             @PageableDefault(size = 10, sort = "hireDate", direction = Sort.Direction.ASC) Pageable pageable) {
         return ResponseEntity.ok(employeeService.getAllEmployees(filter, pageable));
+    }
+
+    @PreAuthorize("hasRole('HR_ADMIN')")
+    @PatchMapping("/delete/Employee")
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id){
+        employeeService.deactivateEmployee(id);
+        return ResponseEntity.noContent().build();
     }
 }

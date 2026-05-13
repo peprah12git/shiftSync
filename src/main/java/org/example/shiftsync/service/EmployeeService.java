@@ -221,4 +221,11 @@ public class EmployeeService {
                 .map(ml -> ml.getLocation().getId())
                 .toList();
     }
+
+    public void deactivateEmployee(Long Id) {
+        Employee employee= employeeRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + Id));
+        employee.setActive(false);
+        employeeRepository.save(employee);
+    }
 }
