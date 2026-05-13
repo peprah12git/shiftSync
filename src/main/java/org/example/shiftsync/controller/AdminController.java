@@ -24,4 +24,24 @@ public class AdminController {
         userService.updateRole(id, role);
         return ResponseEntity.ok("Role updated successfully");
     }
+
+    @PreAuthorize("hasRole('HR_ADMIN')")
+    @PostMapping("/managers/{userId}/locations/{locationId}")
+    public ResponseEntity<String> assignManagerToLocation(
+            @PathVariable Long userId,
+            @PathVariable Long locationId) {
+
+        userService.assignManagerToLocation(userId, locationId);
+        return ResponseEntity.ok("Manager assigned to location successfully");
+    }
+
+    @PreAuthorize("hasRole('HR_ADMIN')")
+    @DeleteMapping("/managers/{userId}/locations/{locationId}")
+    public ResponseEntity<String> removeManagerFromLocation(
+            @PathVariable Long userId,
+            @PathVariable Long locationId) {
+
+        userService.removeManagerFromLocation(userId, locationId);
+        return ResponseEntity.ok("Manager removed from location successfully");
+    }
 }

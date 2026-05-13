@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.Entity.Department;
 import org.example.shiftsync.Entity.Employee;
 import org.example.shiftsync.Entity.Location;
+import org.example.shiftsync.Entity.ManagerLocation;
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.Mapper.EmployeeMapper;
 import org.example.shiftsync.dto.EmployeeFilterDTO;
@@ -16,9 +17,12 @@ import org.example.shiftsync.exception.ResourceNotFoundException;
 import org.example.shiftsync.repository.DepartmentRepository;
 import org.example.shiftsync.repository.EmployeeRepository;
 import org.example.shiftsync.repository.LocationRepository;
+import org.example.shiftsync.repository.ManagerLocationRepository;
 import org.example.shiftsync.repository.UserRepository;
+import org.example.shiftsync.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.example.shiftsync.dto.EmployeeUpdateDTO;
@@ -36,6 +40,7 @@ public class EmployeeService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final LocationRepository locationRepository;
+    private final ManagerLocationRepository managerLocationRepository;
     private final EmployeeMapper employeeMapper;
 
     /**
@@ -49,7 +54,7 @@ public class EmployeeService {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No registered user found with ID: " + dto.getUserId()
-                        ));
+                ));
 
         // 2. Guard: one Employee profile per User
         if (employeeRepository.existsByUserId(dto.getUserId())) {
@@ -84,26 +89,73 @@ public class EmployeeService {
 
     /**
      * Retrieve a single employee by their Employee PK.
+     * MANAGER: only allowed if the employee's primaryLocation is in their assigned locations.
      */
     @Transactional(readOnly = true)
     public EmployeeResponseDTO getEmployee(Long id) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + id));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+
+        if (caller.getRole() == Role.MANAGER) {
+            List<Long> assignedLocationIds = getManagerLocationIds(caller.getId());
+            Long employeeLocationId = employee.getPrimaryLocation() != null
+                    ? employee.getPrimaryLocation().getId() : null;
+
+            if (employeeLocationId == null || !assignedLocationIds.contains(employeeLocationId)) {
+                throw new AccessDeniedException(
+                        "You are not assigned to this employee's location.");
+            }
+        }
+
         return employeeMapper.toDTO(employee);
     }
 
     /**
      * Filterable, paginated list of employees.
+     * MANAGER: automatically scoped to their assigned locations.
+     *          If they explicitly filter by a locationId not in their list → 403.
      */
     @Transactional(readOnly = true)
     public Page<EmployeeResponseDTO> getAllEmployees(EmployeeFilterDTO filter, Pageable pageable) {
-        Specification<Employee> spec = Specification.allOf(
-                EmployeeSpecification.hasFullName(filter.getName()),
-                EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
-                EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
-                EmployeeSpecification.hasLocation(filter.getLocationId()),
-                EmployeeSpecification.isActive(filter.getActive())
-        );
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+
+        Specification<Employee> spec;
+
+        if (caller.getRole() == Role.MANAGER) {
+            List<Long> assignedLocationIds = getManagerLocationIds(caller.getId());
+
+            // If manager specifies a locationId, verify it belongs to them
+            if (filter.getLocationId() != null && !assignedLocationIds.contains(filter.getLocationId())) {
+                throw new AccessDeniedException(
+                        "You are not assigned to location: " + filter.getLocationId());
+            }
+
+            spec = Specification.allOf(
+                    EmployeeSpecification.hasFullName(filter.getName()),
+                    EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
+                    EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
+                    // If they filtered by locationId use that, otherwise scope to all their locations
+                    filter.getLocationId() != null
+                            ? EmployeeSpecification.hasLocation(filter.getLocationId())
+                            : EmployeeSpecification.hasLocationIn(assignedLocationIds),
+                    EmployeeSpecification.isActive(filter.getActive())
+            );
+        } else {
+            // HR_ADMIN: no location restriction
+            spec = Specification.allOf(
+                    EmployeeSpecification.hasFullName(filter.getName()),
+                    EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
+                    EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
+                    EmployeeSpecification.hasLocation(filter.getLocationId()),
+                    EmployeeSpecification.isActive(filter.getActive())
+            );
+        }
 
         return employeeRepository.findAll(spec, pageable)
                 .map(employeeMapper::toDTO);
@@ -155,5 +207,18 @@ public class EmployeeService {
 
         employee = employeeRepository.save(employee);
         return employeeMapper.toDTO(employee);
+    }
+
+    public EmployeeResponseDTO viewEmployeeDetails(Long id) {
+        return getEmployee(id);
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    private List<Long> getManagerLocationIds(Long managerId) {
+        return managerLocationRepository.findByManagerId(managerId)
+                .stream()
+                .map(ml -> ml.getLocation().getId())
+                .toList();
     }
 }
