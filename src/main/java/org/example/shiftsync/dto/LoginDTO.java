@@ -16,7 +16,7 @@ public class LoginDTO {
             message = "email must include special character")
     private String email;
     @NotBlank(message = "Password is required")
-    @Size(min =0, max =64, message = "Password must be between 8 and 64 character")
+    @Size(min =8, max =64, message = "Password must be between 8 and 64 character")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$",
             message =" Password must contain at least one uppercase letter, one lowercase letter")
