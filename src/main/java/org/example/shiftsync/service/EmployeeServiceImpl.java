@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.Entity.Department;
 import org.example.shiftsync.Entity.Employee;
 import org.example.shiftsync.Entity.Location;
-import org.example.shiftsync.Entity.ManagerLocation;
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.Mapper.EmployeeMapper;
 import org.example.shiftsync.dto.EmployeeFilterDTO;
 import org.example.shiftsync.dto.EmployeeRequestDTO;
 import org.example.shiftsync.dto.EmployeeResponseDTO;
+import org.example.shiftsync.service.serviceInterface.EmployeeService;
 import org.example.shiftsync.specification.EmployeeSpecification;
 import org.springframework.data.jpa.domain.Specification;
 import org.example.shiftsync.exception.DuplicateEmailException;
@@ -34,7 +34,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class EmployeeService {
+public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;

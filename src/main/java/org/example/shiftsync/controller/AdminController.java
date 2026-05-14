@@ -3,7 +3,7 @@ package org.example.shiftsync.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.service.AuthServiceImpl;
-import org.example.shiftsync.service.UserService;
+import org.example.shiftsync.service.UserServiceImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/admin")
 @RequiredArgsConstructor
 public class AdminController {
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final AuthServiceImpl authService;
 
     @PreAuthorize("hasRole('HR_ADMIN')")

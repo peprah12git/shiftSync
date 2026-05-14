@@ -10,12 +10,13 @@ import org.example.shiftsync.exception.ResourceNotFoundException;
 import org.example.shiftsync.repository.LocationRepository;
 import org.example.shiftsync.repository.ManagerLocationRepository;
 import org.example.shiftsync.repository.UserRepository;
+import org.example.shiftsync.service.serviceInterface.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ManagerLocationRepository managerLocationRepository;
     private final LocationRepository locationRepository;

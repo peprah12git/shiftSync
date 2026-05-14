@@ -6,7 +6,7 @@ import org.example.shiftsync.dto.EmployeeFilterDTO;
 import org.example.shiftsync.dto.EmployeeRequestDTO;
 import org.example.shiftsync.dto.EmployeeResponseDTO;
 import org.example.shiftsync.dto.EmployeeUpdateDTO;
-import org.example.shiftsync.service.EmployeeService;
+import org.example.shiftsync.service.EmployeeServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class EmployeeController {
 
-    private final EmployeeService employeeService;
+    private final EmployeeServiceImpl employeeService;
 
     /**
      * POST /api/employees

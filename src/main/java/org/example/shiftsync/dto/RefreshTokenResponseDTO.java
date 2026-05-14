@@ -13,5 +13,6 @@ import org.example.shiftsync.enums.Role;
 public class RefreshTokenResponseDTO {
     private String email;
     private String token;
+    private String refreshToken;
     private Role role;
 }

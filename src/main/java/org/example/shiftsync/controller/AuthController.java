@@ -3,12 +3,10 @@ package org.example.shiftsync.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.dto.*;
-import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.service.AuthServiceImpl;
-import org.example.shiftsync.service.UserService;
+import org.example.shiftsync.service.UserServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final AuthServiceImpl authService;
 
     @PostMapping("/register")
@@ -31,8 +29,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponseDTO> refresh(@RequestHeader("Authorization") String authorizationHeader) {
-        RefreshTokenResponseDTO response = authService.refreshToken(authorizationHeader);
+    public ResponseEntity<RefreshTokenResponseDTO> refresh(@Valid @RequestBody RefreshTokenRequestDTO request) {
+        RefreshTokenResponseDTO response = authService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(response);
     }
 
