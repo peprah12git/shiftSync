@@ -15,12 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "employees",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_employees_email", columnNames = "email")
-        }
-)
+@Table(name = "employees")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -68,8 +63,6 @@ public class Employee {
     @Builder.Default
     private List<String> skills = new ArrayList<>();
 
-//    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
-//    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -1,0 +1,231 @@
+package org.example.shiftsync.service;
+
+import lombok.RequiredArgsConstructor;
+import org.example.shiftsync.Entity.Department;
+import org.example.shiftsync.Entity.Employee;
+import org.example.shiftsync.Entity.Location;
+import org.example.shiftsync.Entity.User;
+import org.example.shiftsync.Mapper.EmployeeMapper;
+import org.example.shiftsync.dto.EmployeeFilterDTO;
+import org.example.shiftsync.dto.EmployeeRequestDTO;
+import org.example.shiftsync.dto.EmployeeResponseDTO;
+import org.example.shiftsync.service.serviceInterface.EmployeeService;
+import org.example.shiftsync.specification.EmployeeSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import org.example.shiftsync.exception.DuplicateEmailException;
+import org.example.shiftsync.exception.ResourceNotFoundException;
+import org.example.shiftsync.repository.DepartmentRepository;
+import org.example.shiftsync.repository.EmployeeRepository;
+import org.example.shiftsync.repository.LocationRepository;
+import org.example.shiftsync.repository.ManagerLocationRepository;
+import org.example.shiftsync.repository.UserRepository;
+import org.example.shiftsync.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.example.shiftsync.dto.EmployeeUpdateDTO;
+import org.example.shiftsync.exception.ForbiddenFieldException;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class EmployeeServiceImpl implements EmployeeService {
+
+    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
+    private final LocationRepository locationRepository;
+    private final ManagerLocationRepository managerLocationRepository;
+    private final EmployeeMapper employeeMapper;
+
+    /**
+     * HR_ADMIN creates an employee profile for an already-registered User.
+     * The User must have registered via POST /api/auth/register first.
+     */
+    @Transactional
+    public EmployeeResponseDTO createEmployee(EmployeeRequestDTO dto) {
+
+        // 1. Resolve the existing User — must already be registered
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No registered user found with ID: " + dto.getUserId()
+                ));
+
+        // 2. Guard: one Employee profile per User
+        if (employeeRepository.existsByUserId(dto.getUserId())) {
+            throw new DuplicateEmailException(
+                    "An employee profile already exists for user: " + user.getEmail());
+        }
+
+        // 3. Resolve Department and Location
+        Department department = departmentRepository.findById(dto.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found: " + dto.getDepartmentId()));
+
+        Location location = locationRepository.findById(dto.getLocationId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Location not found: " + dto.getLocationId()));
+
+        // 4. Build and save Employee profile only
+        Employee employee = Employee.builder()
+                .user(user)
+                .phone(dto.getPhone())
+                .employmentType(dto.getEmploymentType())
+                .department(department)
+                .primaryLocation(location)
+                .contractedWeeklyHours(BigDecimal.valueOf(dto.getContractedWeeklyHours()))
+                .hireDate(dto.getHireDate())
+                .skills(dto.getSkillTags() != null ? dto.getSkillTags() : List.of())
+                .build();
+
+        employee = employeeRepository.save(employee);
+        return employeeMapper.toDTO(employee);
+    }
+
+    /**
+     * Retrieve a single employee by their Employee PK.
+     * MANAGER: only allowed if the employee's primaryLocation is in their assigned locations.
+     */
+    @Transactional(readOnly = true)
+    public EmployeeResponseDTO getEmployee(Long id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + id));
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+
+        if (caller.getRole() == Role.MANAGER) {
+            List<Long> assignedLocationIds = getManagerLocationIds(caller.getId());
+            Long employeeLocationId = employee.getPrimaryLocation() != null
+                    ? employee.getPrimaryLocation().getId() : null;
+
+            if (employeeLocationId == null || !assignedLocationIds.contains(employeeLocationId)) {
+                throw new AccessDeniedException(
+                        "You are not assigned to this employee's location.");
+            }
+        }
+
+        return employeeMapper.toDTO(employee);
+    }
+
+    /**
+     * Filterable, paginated list of employees.
+     * MANAGER: automatically scoped to their assigned locations.
+     *          If they explicitly filter by a locationId not in their list → 403.
+     */
+    @Transactional(readOnly = true)
+    public Page<EmployeeResponseDTO> getAllEmployees(EmployeeFilterDTO filter, Pageable pageable) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+
+        Specification<Employee> spec;
+
+        if (caller.getRole() == Role.MANAGER) {
+            List<Long> assignedLocationIds = getManagerLocationIds(caller.getId());
+
+            // If manager specifies a locationId, verify it belongs to them
+            if (filter.getLocationId() != null && !assignedLocationIds.contains(filter.getLocationId())) {
+                throw new AccessDeniedException(
+                        "You are not assigned to location: " + filter.getLocationId());
+            }
+
+            spec = Specification.allOf(
+                    EmployeeSpecification.hasFullName(filter.getName()),
+                    EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
+                    EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
+                    // If they filtered by locationId use that, otherwise scope to all their locations
+                    filter.getLocationId() != null
+                            ? EmployeeSpecification.hasLocation(filter.getLocationId())
+                            : EmployeeSpecification.hasLocationIn(assignedLocationIds),
+                    EmployeeSpecification.isActive(filter.getActive())
+            );
+        } else {
+            // HR_ADMIN: no location restriction
+            spec = Specification.allOf(
+                    EmployeeSpecification.hasFullName(filter.getName()),
+                    EmployeeSpecification.hasDepartment(filter.getDepartmentId()),
+                    EmployeeSpecification.hasEmploymentType(filter.getEmploymentType()),
+                    EmployeeSpecification.hasLocation(filter.getLocationId()),
+                    EmployeeSpecification.isActive(filter.getActive())
+            );
+        }
+
+        return employeeRepository.findAll(spec, pageable)
+                .map(employeeMapper::toDTO);
+    }
+
+    /**
+     * GET /api/employees/me — returns the authenticated employee's own profile.
+     */
+    @Transactional(readOnly = true)
+    public EmployeeResponseDTO getMe() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Employee employee = employeeRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No employee profile found for the authenticated user"));
+        return employeeMapper.toDTO(employee);
+    }
+
+    /**
+     * PATCH /api/employees/me — employee updates only their own phone and skill tags.
+     * Attempting to change employmentType, departmentId, or locationId returns 403.
+     */
+    @Transactional
+    public EmployeeResponseDTO updateMe(EmployeeUpdateDTO dto) {
+        // Guard: reject attempts to update restricted fields
+        if (dto.getEmploymentType() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'employmentType' is not allowed. Contact HR Admin.");
+        }
+        if (dto.getDepartmentId() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'departmentId' is not allowed. Contact HR Admin.");
+        }
+        if (dto.getLocationId() != null) {
+            throw new ForbiddenFieldException(
+                    "Updating 'locationId' is not allowed. Contact HR Admin.");
+        }
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Employee employee = employeeRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No employee profile found for the authenticated user"));
+
+        if (dto.getPhone() != null) {
+            employee.setPhone(dto.getPhone());
+        }
+        if (dto.getSkillTags() != null) {
+            employee.setSkills(dto.getSkillTags());
+        }
+
+        employee = employeeRepository.save(employee);
+        return employeeMapper.toDTO(employee);
+    }
+
+    public EmployeeResponseDTO viewEmployeeDetails(Long id) {
+        return getEmployee(id);
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    private List<Long> getManagerLocationIds(Long managerId) {
+        return managerLocationRepository.findByManagerId(managerId)
+                .stream()
+                .map(ml -> ml.getLocation().getId())
+                .toList();
+    }
+
+    public void deactivateEmployee(Long Id) {
+        Employee employee= employeeRepository.findById(Id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + Id));
+        employee.setActive(false);
+        employeeRepository.save(employee);
+    }
+}

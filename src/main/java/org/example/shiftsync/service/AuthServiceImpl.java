@@ -1,6 +1,7 @@
 package org.example.shiftsync.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.shiftsync.Entity.RefreshToken;
 import org.example.shiftsync.Entity.User;
 import org.example.shiftsync.dto.LoginDTO;
 import org.example.shiftsync.dto.LoginResponseDTO;
@@ -11,18 +12,30 @@ import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.exception.DuplicateEmailException;
 import org.example.shiftsync.exception.EmailNotFoundException;
 import org.example.shiftsync.exception.InvalidTokenException;
+import org.example.shiftsync.repository.RefreshTokenRepository;
 import org.example.shiftsync.repository.UserRepository;
 import org.example.shiftsync.security.JwtTokenService;
+import org.example.shiftsync.service.serviceInterface.AuthService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl {
+public class AuthServiceImpl implements AuthService {
+
     private final JwtTokenService jwtTokenService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value("${jwt.refresh.expiration}")
+    private long refreshExpirationMs;
 
     public UserResponse registration(RegistrationDTO registrationDTO) {
         if (userRepository.existsByEmail(registrationDTO.getEmail())) {
@@ -38,31 +51,61 @@ public class AuthServiceImpl {
         return new UserResponse(saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole());
     }
 
-    public RefreshTokenResponseDTO refreshToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new InvalidTokenException("Missing or invalid Authorization header");
-        }
-        String token = authorizationHeader.substring(7);
-        if (!jwtTokenService.isTokenValid(token)) {
-            throw new InvalidTokenException("Token is expired or invalid");
-        }
-        String email = jwtTokenService.extractEmail(token);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EmailNotFoundException("User not found for email: " + email));
-        String newToken = jwtTokenService.generateToken(user);
-        return new RefreshTokenResponseDTO(user.getEmail(), newToken, user.getRole());
-    }
-
+    @Transactional
     public LoginResponseDTO login(LoginDTO loginDTO) {
         User user = userRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new EmailNotFoundException("No account found for email: " + loginDTO.getEmail()));
+
         if (!user.isActive()) {
             throw new DisabledException("Account is deactivated");
         }
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPasswordHash())) {
             throw new InvalidTokenException("Invalid credentials");
         }
-        String token = jwtTokenService.generateToken(user);
-        return new LoginResponseDTO(user.getId(),user.getFullName(),user.getEmail(), token, user.getRole());
+
+        // Invalidate any previous refresh tokens for this user
+        refreshTokenRepository.deleteByUser_Id(user.getId());
+
+        String accessToken = jwtTokenService.generateToken(user);
+        String rawRefreshToken = issueRefreshToken(user);
+
+        return new LoginResponseDTO(user.getId(), user.getFullName(), user.getEmail(), accessToken, rawRefreshToken, user.getRole());
+    }
+
+    @Transactional
+    public RefreshTokenResponseDTO refreshToken(String rawToken) {
+        RefreshToken stored = refreshTokenRepository.findByToken(rawToken)
+                .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
+
+        if (stored.isRevoked()) {
+            throw new InvalidTokenException("Refresh token has been revoked");
+        }
+        if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new InvalidTokenException("Refresh token has expired");
+        }
+
+        User user = stored.getUser();
+        if (!user.isActive()) {
+            throw new DisabledException("Account is deactivated");
+        }
+
+        // Rotate: revoke the consumed token, issue a fresh one
+        stored.setRevoked(true);
+        refreshTokenRepository.save(stored);
+
+        String newAccessToken = jwtTokenService.generateToken(user);
+        String newRawRefreshToken = issueRefreshToken(user);
+
+        return new RefreshTokenResponseDTO(user.getEmail(), newAccessToken, newRawRefreshToken, user.getRole());
+    }
+
+    private String issueRefreshToken(User user) {
+        String raw = UUID.randomUUID().toString();
+        refreshTokenRepository.save(RefreshToken.builder()
+                .token(raw)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusSeconds(refreshExpirationMs / 1000))
+                .build());
+        return raw;
     }
 }
