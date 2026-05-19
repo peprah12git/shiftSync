@@ -11,7 +11,7 @@ public interface EmployeeService {
     EmployeeResponseDTO createEmployee(EmployeeRequestDTO dto);
     EmployeeResponseDTO getEmployee(Long id);
     Page<EmployeeResponseDTO> getAllEmployees(EmployeeFilterDTO filter, Pageable pageable);
-    EmployeeResponseDTO getMe();
+    EmployeeResponseDTO getMyProfile();
     EmployeeResponseDTO updateMe(EmployeeUpdateDTO dto);
     EmployeeResponseDTO viewEmployeeDetails(Long id);
     void deactivateEmployee(Long id);

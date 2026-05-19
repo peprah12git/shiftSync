@@ -34,7 +34,7 @@ public class EmployeeController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<EmployeeResponseDTO> getMe() {
-        return ResponseEntity.ok(employeeService.getMe());
+        return ResponseEntity.ok(employeeService.getMyProfile());
     }
 
     @PreAuthorize("isAuthenticated()")

@@ -165,7 +165,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      * GET /api/employees/me — returns the authenticated employee's own profile.
      */
     @Transactional(readOnly = true)
-    public EmployeeResponseDTO getMe() {
+    public EmployeeResponseDTO getMyProfile() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Employee employee = employeeRepository.findByUserEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException(
