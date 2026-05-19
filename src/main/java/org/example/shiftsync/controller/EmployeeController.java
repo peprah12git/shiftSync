@@ -23,31 +23,20 @@ public class EmployeeController {
 
     private final EmployeeServiceImpl employeeService;
 
-    /**
-     * POST /api/employees
-     * HR_ADMIN only — creates an employee profile for an already-registered user.
-     */
     @PreAuthorize("hasRole('HR_ADMIN')")
-    @PostMapping("/createEmployee")
+    @PostMapping
     public ResponseEntity<EmployeeResponseDTO> createEmployee(
             @Valid @RequestBody EmployeeRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(employeeService.createEmployee(request));
     }
 
-    /**
-     * GET /api/employees/me — any authenticated employee sees their own profile.
-     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<EmployeeResponseDTO> getMe() {
         return ResponseEntity.ok(employeeService.getMe());
     }
 
-    /**
-     * PATCH /api/employees/me — employee updates their own phone / skill tags only.
-     * Sending employmentType, departmentId, or locationId returns 403.
-     */
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/me")
     public ResponseEntity<EmployeeResponseDTO> updateMe(
@@ -55,23 +44,14 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.updateMe(dto));
     }
 
-    /**
-     * GET /api/employees/{id}
-     * HR_ADMIN or MANAGER — look up an employee profile by Employee ID.
-     */
     @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeResponseDTO> getEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployee(id));
     }
 
-    /**
-     * GET /api/employees
-     * HR_ADMIN or MANAGER — filterable, paginated list of employees.
-     *   GET /api/employees?name=john&departmentId=2&employmentType=FULL_TIME&page=0&size=10&sort=hireDate,desc
-     */
     @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
-    @GetMapping("/getALlEmployees")
+    @GetMapping
     public ResponseEntity<Page<EmployeeResponseDTO>> getAllEmployees(
             @ModelAttribute EmployeeFilterDTO filter,
             @PageableDefault(size = 10, sort = "hireDate", direction = Sort.Direction.ASC) Pageable pageable) {
@@ -79,7 +59,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasRole('HR_ADMIN')")
-    @PatchMapping("/delete/Employee")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id){
         employeeService.deactivateEmployee(id);
         return ResponseEntity.noContent().build();

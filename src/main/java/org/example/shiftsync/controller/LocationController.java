@@ -13,19 +13,19 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/location")
+@RequestMapping("/api/v1/locations")
 public class LocationController {
 
     private final LocationServiceImpl locationService;
 
-    @PostMapping("/create")
+    @PostMapping
     @PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<LocationDTO> createLocation(@Valid @RequestBody LocationDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(locationService.createLocation(dto));
     }
 
-    @GetMapping("/all/locations")
+    @GetMapping
     @PreAuthorize("hasAnyRole('HR_ADMIN')")
     public ResponseEntity<List<LocationDTO>> getAllLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
@@ -37,13 +37,13 @@ public class LocationController {
         return ResponseEntity.ok(locationService.getLocationById(id));
     }
 
-    @PutMapping("/location/{id}")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<LocationDTO> updateLocation(@PathVariable Long id, @Valid @RequestBody LocationDTO dto) {
         return ResponseEntity.ok(locationService.updateLocation(id, dto));
     }
 
-    @PatchMapping("/delete-location/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<List<LocationDTO>> deleteLocation(@PathVariable Long id) {
         locationService.deleteLocation(id);
