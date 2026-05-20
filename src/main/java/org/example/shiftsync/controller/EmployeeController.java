@@ -50,7 +50,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getEmployee(id));
     }
 
-    @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasRole('HR_ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<Page<EmployeeResponseDTO>> getAllEmployees(
             @ModelAttribute EmployeeFilterDTO filter,

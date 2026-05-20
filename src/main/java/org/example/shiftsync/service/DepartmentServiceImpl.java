@@ -32,8 +32,8 @@ public class DepartmentServiceImpl implements DepartmentInterface {
         Department department = new Department();
         department.setName(departmentDTO.getName());
         department.setLocation(location);
-        departmentRepository.save(department);
-        return departmentDTO;
+        Department saved = departmentRepository.save(department);
+        return new DepartmentDTO(saved.getId(), saved.getName());
     }
 
     @Override
@@ -42,7 +42,7 @@ public class DepartmentServiceImpl implements DepartmentInterface {
                 .orElseThrow(() -> new ResourceNotFoundException("Location not found with id: " + locationId));
 
         return departmentRepository.findAllByLocation(location).stream()
-                .map(dept -> new DepartmentDTO(dept.getName()))
+                .map(dept -> new DepartmentDTO(dept.getId(), dept.getName()))
                 .toList();
     }
 }

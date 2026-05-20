@@ -12,6 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DepartmentDTO {
+    private Long id;
     @NotBlank(message = "Department name is required")
     @Size(max = 150, message = "department name must not exceed 150")
     private String name;
