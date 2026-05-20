@@ -213,7 +213,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         return getEmployee(id);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
 
     private List<Long> getManagerLocationIds(Long managerId) {
         return managerLocationRepository.findByManagerId(managerId)
