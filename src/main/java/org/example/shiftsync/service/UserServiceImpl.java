@@ -5,7 +5,7 @@ import org.example.shiftsync.Entity.Location;
 import org.example.shiftsync.Entity.ManagerLocation;
 import org.example.shiftsync.Entity.ManagerLocationId;
 import org.example.shiftsync.Entity.User;
-import org.example.shiftsync.dto.LocationDTO;
+import org.example.shiftsync.dto.LocationResponseDTO;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.exception.ResourceNotFoundException;
 import org.example.shiftsync.repository.LocationRepository;
@@ -79,14 +79,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<LocationDTO> getMyLocations() {
+    public List<LocationResponseDTO> getMyLocations() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User manager = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
 
         return managerLocationRepository.findByManagerId(manager.getId()).stream()
                 .map(ManagerLocation::getLocation)
-                .map(loc -> new LocationDTO(loc.getName(), loc.getAddress(), loc.getMaxHeadcountPerShift()))
+                .map(loc -> new LocationResponseDTO(loc.getId(), loc.getName(), loc.getAddress(), loc.getMaxHeadcountPerShift()))
                 .toList();
     }
 }

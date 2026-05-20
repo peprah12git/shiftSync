@@ -3,6 +3,7 @@ package org.example.shiftsync.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.dto.LocationDTO;
+import org.example.shiftsync.dto.LocationResponseDTO;
 import org.example.shiftsync.service.LocationServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,32 +21,32 @@ public class LocationController {
 
     @PostMapping
     @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<LocationDTO> createLocation(@Valid @RequestBody LocationDTO dto) {
+    public ResponseEntity<LocationResponseDTO> createLocation(@Valid @RequestBody LocationDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(locationService.createLocation(dto));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('HR_ADMIN')")
-    public ResponseEntity<List<LocationDTO>> getAllLocations() {
+    public ResponseEntity<List<LocationResponseDTO>> getAllLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('HR_ADMIN', 'MANAGER')")
-    public ResponseEntity<LocationDTO> getLocationById(@PathVariable Long id) {
+    public ResponseEntity<LocationResponseDTO> getLocationById(@PathVariable Long id) {
         return ResponseEntity.ok(locationService.getLocationById(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<LocationDTO> updateLocation(@PathVariable Long id, @Valid @RequestBody LocationDTO dto) {
+    public ResponseEntity<LocationResponseDTO> updateLocation(@PathVariable Long id, @Valid @RequestBody LocationDTO dto) {
         return ResponseEntity.ok(locationService.updateLocation(id, dto));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('HR_ADMIN')")
-    public ResponseEntity<List<LocationDTO>> deleteLocation(@PathVariable Long id) {
+    public ResponseEntity<List<LocationResponseDTO>> deleteLocation(@PathVariable Long id) {
         locationService.deleteLocation(id);
         return ResponseEntity.ok(locationService.getAllLocations());
     }

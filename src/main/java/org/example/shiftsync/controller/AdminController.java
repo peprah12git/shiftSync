@@ -1,7 +1,7 @@
 package org.example.shiftsync.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.shiftsync.dto.LocationDTO;
+import org.example.shiftsync.dto.LocationResponseDTO;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.service.AuthServiceImpl;
 import org.example.shiftsync.service.UserServiceImpl;
@@ -50,7 +50,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/managers/me/locations")
-    public ResponseEntity<List<LocationDTO>> getMyLocations() {
+    public ResponseEntity<List<LocationResponseDTO>> getMyLocations() {
         return ResponseEntity.ok(userService.getMyLocations());
     }
 }

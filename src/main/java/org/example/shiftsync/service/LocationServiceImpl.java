@@ -3,6 +3,7 @@ package org.example.shiftsync.service;
 import lombok.RequiredArgsConstructor;
 import org.example.shiftsync.Entity.Location;
 import org.example.shiftsync.dto.LocationDTO;
+import org.example.shiftsync.dto.LocationResponseDTO;
 import org.example.shiftsync.exception.ResourceNotFoundException;
 import org.example.shiftsync.repository.LocationRepository;
 import org.example.shiftsync.service.serviceInterface.LocationInterface;
@@ -18,7 +19,7 @@ public class LocationServiceImpl implements LocationInterface {
     private final LocationRepository locationRepository;
 
     @Override
-    public LocationDTO createLocation(LocationDTO dto) {
+    public LocationResponseDTO createLocation(LocationDTO dto) {
         if (locationRepository.existsByName(dto.getName())) {
             throw new IllegalArgumentException("Location with name '" + dto.getName() + "' already exists");
         }
@@ -31,14 +32,14 @@ public class LocationServiceImpl implements LocationInterface {
     }
 
     @Override
-    public LocationDTO getLocationById(Long id) {
+    public LocationResponseDTO getLocationById(Long id) {
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Location not found with id: " + id));
         return mapToDto(location);
     }
 
     @Override
-    public List<LocationDTO> getAllLocations() {
+    public List<LocationResponseDTO> getAllLocations() {
         return locationRepository.findAll()
                 .stream()
                 .map(this::mapToDto)
@@ -46,7 +47,7 @@ public class LocationServiceImpl implements LocationInterface {
     }
 
     @Override
-    public LocationDTO updateLocation(Long id, LocationDTO dto) {
+    public LocationResponseDTO updateLocation(Long id, LocationDTO dto) {
         Location location = locationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Location not found with id: " + id));
         location.setName(dto.getName());
@@ -63,8 +64,9 @@ public class LocationServiceImpl implements LocationInterface {
         locationRepository.save(location);
     }
 
-    private LocationDTO mapToDto(Location location) {
-        return new LocationDTO(
+    private LocationResponseDTO mapToDto(Location location) {
+        return new LocationResponseDTO(
+                location.getId(),
                 location.getName(),
                 location.getAddress(),
                 location.getMaxHeadcountPerShift()
