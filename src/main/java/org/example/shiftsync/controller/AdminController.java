@@ -1,6 +1,7 @@
 package org.example.shiftsync.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.shiftsync.dto.LocationResponseDTO;
 import org.example.shiftsync.enums.Role;
 import org.example.shiftsync.service.AuthServiceImpl;
 import org.example.shiftsync.service.UserServiceImpl;
@@ -8,8 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("api/admin")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 public class AdminController {
     private final UserServiceImpl userService;
@@ -43,5 +46,11 @@ public class AdminController {
 
         userService.removeManagerFromLocation(userId, locationId);
         return ResponseEntity.ok("Manager removed from location successfully");
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
+    @GetMapping("/managers/me/locations")
+    public ResponseEntity<List<LocationResponseDTO>> getMyLocations() {
+        return ResponseEntity.ok(userService.getMyLocations());
     }
 }
