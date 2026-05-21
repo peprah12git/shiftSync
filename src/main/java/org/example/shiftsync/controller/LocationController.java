@@ -27,7 +27,7 @@ public class LocationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HR_ADMIN')")
+    @PreAuthorize("hasRole('HR_ADMIN')")
     public ResponseEntity<List<LocationResponseDTO>> getAllLocations() {
         return ResponseEntity.ok(locationService.getAllLocations());
     }
